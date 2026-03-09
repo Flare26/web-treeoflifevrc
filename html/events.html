@@ -411,6 +411,23 @@
       });
 
     function parseEvents(text) {
+      // Timezone abbreviation → UTC offset in minutes
+      const tzOffsets = {
+        'UTC':  0,
+        'GMT':  0,
+        'EST':  -300,
+        'EDT':  -240,
+        'CST':  -360,
+        'CDT':  -300,
+        'MST':  -420,
+        'MDT':  -360,
+        'PST':  -480,
+        'PDT':  -420,
+        'AKST': -540,
+        'AKDT': -480,
+        'HST':  -600,
+      };
+
       const lines = text.split('\n');
       const events = [];
 
@@ -425,14 +442,28 @@
         const title = line.substring(pipeIdx + 1).trim();
         if (!title) continue;
 
-        // Parse "YYYY-MM-DD HH:MM" as UTC
-        const match = datePart.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})$/);
+        // Parse "YYYY-MM-DD HH:MM" or "YYYY-MM-DD HH:MM TZ"
+        const match = datePart.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})(?:\s+([A-Za-z]+))?$/);
         if (!match) continue;
 
-        const utcDate = new Date(match[1] + 'T' + match[2] + ':00Z');
-        if (isNaN(utcDate.getTime())) continue;
+        const [, dateStr, timeStr, tzAbbr] = match;
+        let date;
 
-        events.push({ date: utcDate, title });
+        if (!tzAbbr || tzAbbr.toUpperCase() === 'UTC' || tzAbbr.toUpperCase() === 'GMT') {
+          // No TZ or UTC/GMT — treat as UTC
+          date = new Date(dateStr + 'T' + timeStr + ':00Z');
+        } else {
+          const offsetMin = tzOffsets[tzAbbr.toUpperCase()];
+          if (offsetMin === undefined) continue; // unknown TZ, skip
+
+          // Build the date as if UTC, then subtract the offset to get real UTC
+          const asUtc = new Date(dateStr + 'T' + timeStr + ':00Z');
+          date = new Date(asUtc.getTime() - offsetMin * 60000);
+        }
+
+        if (isNaN(date.getTime())) continue;
+
+        events.push({ date, title });
       }
 
       // Sort chronologically
