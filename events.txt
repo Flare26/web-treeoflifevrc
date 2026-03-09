@@ -1,0 +1,11 @@
+# Tree of Life — Event Schedule
+# Format: YYYY-MM-DD HH:MM | Event Title
+# All times in UTC. Blank lines and lines starting with # are ignored.
+
+2026-03-14 03:00 | Saturday Night Rave: Crystal Dreams Edition
+2026-03-21 03:00 | Open Decks Night — Come Spin Your Tracks!
+2026-03-28 03:00 | Throwback Vibes: 2000s Dance Hits
+2026-04-04 03:00 | Neon Jungle: Bass & Glow
+2026-04-11 03:00 | Community Spotlight DJ Set
+2026-04-18 03:00 | Full Moon Trance Night — Extended 3-Hour Set
+2026-04-25 03:00 | Chill Lounge: Ambient & Downtempo
