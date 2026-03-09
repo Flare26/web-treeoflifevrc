@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gallery — Tree of Life</title>
+  <link rel="icon" type="image/png" href="elements/favicon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Quicksand:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ═══════════════════════════════════════
+       CSS VARIABLES — matches hub.html palette
+       ═══════════════════════════════════════ */
+    :root {
+      --deep-violet: #1a0a2e;
+      --mid-purple: #2d1b4e;
+      --lavender: #b8a9d4;
+      --crystal-mint: #a8e6cf;
+      --lantern-gold: #f0c27f;
+      --soft-white: #f0eaf8;
+      --glass-bg: rgba(45, 27, 78, 0.45);
+      --glass-border: rgba(184, 169, 212, 0.25);
+      --glass-highlight: rgba(184, 169, 212, 0.1);
+    }
+
+    /* ═══════════════════════════════════════
+       RESET & BASE
+       ═══════════════════════════════════════ */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Quicksand', sans-serif;
+      color: var(--soft-white);
+      min-height: 100vh;
+      overflow-x: hidden;
+      background: linear-gradient(
+        180deg,
+        #1a0a2e 0%,
+        #2d1b4e 20%,
+        #4a2a6b 40%,
+        #6b3a5c 55%,
+        #8b4a4a 68%,
+        #6b3b2a 78%,
+        #4a2a1a 88%,
+        #2a1a0e 100%
+      );
+      background-attachment: fixed;
+    }
+
+    /* ═══════════════════════════════════════
+       SPARKLE PARTICLES (same as hub)
+       ═══════════════════════════════════════ */
+    .sparkle-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ═══════════════════════════════════════
+       LAYOUT
+       ═══════════════════════════════════════ */
+    .page-wrapper {
+      position: relative;
+      z-index: 1;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* ═══════════════════════════════════════
+       HEADER / NAV
+       ═══════════════════════════════════════ */
+    .gallery-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--lavender);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+      margin-bottom: 1.5rem;
+      transition: color 0.3s;
+    }
+    .back-link:hover { color: var(--crystal-mint); }
+    .back-link svg { width: 18px; height: 18px; }
+
+    .gallery-logo {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      border: 2px solid var(--glass-border);
+      margin-bottom: 1rem;
+      filter: drop-shadow(0 0 12px rgba(168, 230, 207, 0.3));
+    }
+
+    .gallery-header h1 {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--lavender), var(--crystal-mint), var(--lantern-gold));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+
+    .gallery-header p {
+      color: var(--lavender);
+      font-size: 1rem;
+      font-weight: 300;
+      opacity: 0.85;
+    }
+
+    /* ═══════════════════════════════════════
+       FILTER TABS
+       ═══════════════════════════════════════ */
+    .filter-bar {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .filter-btn {
+      font-family: 'Quicksand', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.5rem 1.2rem;
+      border: 1px solid var(--glass-border);
+      border-radius: 999px;
+      background: var(--glass-bg);
+      color: var(--lavender);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    .filter-btn:hover {
+      border-color: var(--crystal-mint);
+      color: var(--crystal-mint);
+      box-shadow: 0 0 14px rgba(168, 230, 207, 0.15);
+    }
+    .filter-btn.active {
+      background: linear-gradient(135deg, rgba(168, 230, 207, 0.2), rgba(184, 169, 212, 0.2));
+      border-color: var(--crystal-mint);
+      color: var(--crystal-mint);
+      box-shadow: 0 0 18px rgba(168, 230, 207, 0.2);
+    }
+
+    /* ═══════════════════════════════════════
+       MASONRY GALLERY GRID
+       ═══════════════════════════════════════ */
+    .gallery-grid {
+      columns: 3;
+      column-gap: 1rem;
+    }
+
+    @media (max-width: 900px)  { .gallery-grid { columns: 2; } }
+    @media (max-width: 540px)  { .gallery-grid { columns: 1; } }
+
+    .gallery-item {
+      break-inside: avoid;
+      margin-bottom: 1rem;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+      border: 1px solid var(--glass-border);
+      background: var(--glass-bg);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+      animation: fadeUp 0.6s ease both;
+    }
+    .gallery-item:hover {
+      transform: translateY(-4px) scale(1.015);
+      box-shadow: 0 12px 40px rgba(168, 230, 207, 0.15), 0 0 20px rgba(184, 169, 212, 0.1);
+      border-color: rgba(168, 230, 207, 0.4);
+    }
+
+    .gallery-item img {
+      width: 100%;
+      display: block;
+      transition: filter 0.35s ease;
+    }
+    .gallery-item:hover img {
+      filter: brightness(1.08);
+    }
+
+    .gallery-item .caption {
+      padding: 0.7rem 0.9rem;
+      font-size: 0.85rem;
+      color: var(--lavender);
+      font-weight: 400;
+    }
+    .gallery-item .caption .tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--crystal-mint);
+      opacity: 0.8;
+      margin-bottom: 0.2rem;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* stagger entrance */
+    .gallery-item:nth-child(1)  { animation-delay: 0.05s; }
+    .gallery-item:nth-child(2)  { animation-delay: 0.10s; }
+    .gallery-item:nth-child(3)  { animation-delay: 0.15s; }
+    .gallery-item:nth-child(4)  { animation-delay: 0.20s; }
+    .gallery-item:nth-child(5)  { animation-delay: 0.25s; }
+    .gallery-item:nth-child(6)  { animation-delay: 0.30s; }
+    .gallery-item:nth-child(7)  { animation-delay: 0.35s; }
+    .gallery-item:nth-child(8)  { animation-delay: 0.40s; }
+    .gallery-item:nth-child(9)  { animation-delay: 0.45s; }
+    .gallery-item:nth-child(10) { animation-delay: 0.50s; }
+
+    /* ═══════════════════════════════════════
+       LIGHTBOX
+       ═══════════════════════════════════════ */
+    .lightbox-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(10, 4, 20, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      cursor: zoom-out;
+      animation: fadeIn 0.25s ease;
+    }
+    .lightbox-overlay.active { display: flex; }
+
+    .lightbox-content {
+      position: relative;
+      max-width: 90vw;
+      max-height: 85vh;
+      cursor: default;
+      animation: lightboxPop 0.3s ease;
+    }
+    .lightbox-content img {
+      max-width: 100%;
+      max-height: 85vh;
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(168, 230, 207, 0.1);
+    }
+
+    .lightbox-caption {
+      text-align: center;
+      margin-top: 0.8rem;
+      color: var(--lavender);
+      font-size: 0.95rem;
+    }
+
+    .lightbox-close {
+      position: fixed;
+      top: 1.2rem;
+      right: 1.5rem;
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--glass-border);
+      border-radius: 50%;
+      background: var(--glass-bg);
+      color: var(--lavender);
+      font-size: 1.4rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .lightbox-close:hover {
+      border-color: var(--crystal-mint);
+      color: var(--crystal-mint);
+    }
+
+    .lightbox-nav {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 48px;
+      height: 48px;
+      border: 1px solid var(--glass-border);
+      border-radius: 50%;
+      background: var(--glass-bg);
+      color: var(--lavender);
+      font-size: 1.3rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .lightbox-nav:hover {
+      border-color: var(--crystal-mint);
+      color: var(--crystal-mint);
+    }
+    .lightbox-prev { left: 1.2rem; }
+    .lightbox-next { right: 1.2rem; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; } to { opacity: 1; }
+    }
+    @keyframes lightboxPop {
+      from { opacity: 0; transform: scale(0.92); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    /* ═══════════════════════════════════════
+       EMPTY STATE
+       ═══════════════════════════════════════ */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 1rem;
+      color: var(--lavender);
+      opacity: 0.7;
+    }
+    .empty-state svg {
+      width: 64px; height: 64px;
+      margin-bottom: 1rem;
+      stroke: var(--crystal-mint);
+      opacity: 0.5;
+    }
+    .empty-state p {
+      font-size: 1rem;
+      max-width: 380px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* ═══════════════════════════════════════
+       FOOTER
+       ═══════════════════════════════════════ */
+    .gallery-footer {
+      text-align: center;
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--glass-border);
+      color: var(--lavender);
+      font-size: 0.8rem;
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ════════ SPARKLE PARTICLES ════════ -->
+  <canvas class="sparkle-canvas" id="sparkleCanvas"></canvas>
+
+  <div class="page-wrapper">
+
+    <!-- ════════ HEADER ════════ -->
+    <header class="gallery-header">
+      <a href="hub.html" class="back-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        Back to Hub
+      </a>
+      <br>
+      <img src="elements/logo.png" alt="Tree of Life Logo" class="gallery-logo">
+      <h1>Screenshot Gallery</h1>
+      <p>Moments captured from the dance floor &amp; beyond</p>
+    </header>
+
+    <!-- ════════ FILTER TABS ════════ -->
+    <nav class="filter-bar">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="events">Events</button>
+      <button class="filter-btn" data-filter="vibes">Vibes</button>
+      <button class="filter-btn" data-filter="community">Community</button>
+    </nav>
+
+    <!-- ════════ GALLERY GRID ════════
+         HOW TO ADD IMAGES:
+         Copy a <div class="gallery-item"> block and change:
+           1. data-category  →  "events", "vibes", or "community"
+           2. src            →  path to your screenshot (e.g. "elements/gallery/my-photo.png")
+           3. alt            →  description of the image
+           4. .tag text      →  the category label shown on the card
+           5. caption text   →  your caption for the image
+    ════════════════════════════════════ -->
+    <div class="gallery-grid" id="galleryGrid">
+
+      <!-- ★ EXAMPLE ITEM — duplicate this block for each screenshot ★ -->
+      <!--
+      <div class="gallery-item" data-category="events">
+        <img src="elements/gallery/screenshot1.png" alt="Description of screenshot">
+        <div class="caption">
+          <div class="tag">Events</div>
+          Your caption text here
+        </div>
+      </div>
+      -->
+
+    </div>
+
+    <!-- ════════ EMPTY STATE (shows when no images yet) ════════ -->
+    <div class="empty-state" id="emptyState">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <circle cx="8.5" cy="8.5" r="1.5"/>
+        <path d="M21 15l-5-5L5 21"/>
+      </svg>
+      <p>No screenshots yet! Add your first images to the <code>elements/gallery/</code> folder and uncomment the example items in the HTML.</p>
+    </div>
+
+    <footer class="gallery-footer">
+      Tree of Life VR &middot; A VRChat Dance Community
+    </footer>
+  </div>
+
+  <!-- ════════ LIGHTBOX ════════ -->
+  <div class="lightbox-overlay" id="lightbox">
+    <button class="lightbox-close" id="lightboxClose">&times;</button>
+    <button class="lightbox-nav lightbox-prev" id="lightboxPrev">&#8249;</button>
+    <button class="lightbox-nav lightbox-next" id="lightboxNext">&#8250;</button>
+    <div class="lightbox-content">
+      <img id="lightboxImg" src="" alt="">
+      <div class="lightbox-caption" id="lightboxCaption"></div>
+    </div>
+  </div>
+
+  <!-- ════════ JAVASCRIPT ════════ -->
+  <script>
+    // ── Sparkle Particles (identical to hub.html) ──
+    (function() {
+      const canvas = document.getElementById('sparkleCanvas');
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+      const PARTICLE_COUNT = 55;
+
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      function createParticle() {
+        return {
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          size: Math.random() * 2.2 + 0.6,
+          speedX: (Math.random() - 0.5) * 0.3,
+          speedY: (Math.random() - 0.5) * 0.3,
+          opacity: Math.random() * 0.7 + 0.3,
+          pulse: Math.random() * Math.PI * 2,
+          hue: Math.random() > 0.5 ? '168,230,207' : '184,169,212'
+        };
+      }
+
+      for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(createParticle());
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+          p.x += p.speedX;
+          p.y += p.speedY;
+          p.pulse += 0.015;
+          const flicker = Math.sin(p.pulse) * 0.3 + 0.7;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${p.hue}, ${p.opacity * flicker})`;
+          ctx.fill();
+          // Wrap around edges
+          if (p.x < -10) p.x = canvas.width + 10;
+          if (p.x > canvas.width + 10) p.x = -10;
+          if (p.y < -10) p.y = canvas.height + 10;
+          if (p.y > canvas.height + 10) p.y = -10;
+        });
+        requestAnimationFrame(animate);
+      }
+      animate();
+    })();
+
+    // ── Filter Logic ──
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const galleryGrid = document.getElementById('galleryGrid');
+    const emptyState  = document.getElementById('emptyState');
+
+    function applyFilter(category) {
+      const items = galleryGrid.querySelectorAll('.gallery-item');
+      let visibleCount = 0;
+
+      items.forEach((item, i) => {
+        const match = category === 'all' || item.dataset.category === category;
+        item.style.display = match ? '' : 'none';
+        if (match) {
+          visibleCount++;
+          item.style.animationDelay = `${visibleCount * 0.05}s`;
+        }
+      });
+
+      // Show empty state only if truly no images
+      emptyState.style.display = items.length === 0 ? '' : 'none';
+    }
+
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        applyFilter(btn.dataset.filter);
+      });
+    });
+
+    // ── Lightbox Logic ──
+    const lightbox        = document.getElementById('lightbox');
+    const lightboxImg     = document.getElementById('lightboxImg');
+    const lightboxCaption = document.getElementById('lightboxCaption');
+    let currentIndex = 0;
+
+    function getVisibleItems() {
+      return [...galleryGrid.querySelectorAll('.gallery-item')].filter(
+        item => item.style.display !== 'none'
+      );
+    }
+
+    function openLightbox(index) {
+      const items = getVisibleItems();
+      if (!items[index]) return;
+      currentIndex = index;
+      const img = items[index].querySelector('img');
+      const cap = items[index].querySelector('.caption');
+      lightboxImg.src = img.src;
+      lightboxImg.alt = img.alt;
+      lightboxCaption.textContent = cap ? cap.textContent.trim() : '';
+      lightbox.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+      lightbox.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    function navigateLightbox(dir) {
+      const items = getVisibleItems();
+      currentIndex = (currentIndex + dir + items.length) % items.length;
+      openLightbox(currentIndex);
+    }
+
+    galleryGrid.addEventListener('click', e => {
+      const item = e.target.closest('.gallery-item');
+      if (!item) return;
+      const items = getVisibleItems();
+      openLightbox(items.indexOf(item));
+    });
+
+    document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+    document.getElementById('lightboxPrev').addEventListener('click', () => navigateLightbox(-1));
+    document.getElementById('lightboxNext').addEventListener('click', () => navigateLightbox(1));
+    lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
+
+    document.addEventListener('keydown', e => {
+      if (!lightbox.classList.contains('active')) return;
+      if (e.key === 'Escape')      closeLightbox();
+      if (e.key === 'ArrowLeft')   navigateLightbox(-1);
+      if (e.key === 'ArrowRight')  navigateLightbox(1);
+    });
+
+    // Initial state
+    applyFilter('all');
+  </script>
+</body>
+</html>
