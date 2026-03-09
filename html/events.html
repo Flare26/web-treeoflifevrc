@@ -411,22 +411,46 @@
       });
 
     function parseEvents(text) {
-      // Timezone abbreviation → UTC offset in minutes
-      const tzOffsets = {
-        'UTC':  0,
-        'GMT':  0,
-        'EST':  -300,
-        'EDT':  -240,
-        'CST':  -360,
-        'CDT':  -300,
-        'MST':  -420,
-        'MDT':  -360,
-        'PST':  -480,
-        'PDT':  -420,
-        'AKST': -540,
-        'AKDT': -480,
+      // DST-aware short aliases → IANA timezone names
+      // Use these so "21:00 CT" is always 9 PM Central, regardless of DST
+      const tzAliases = {
+        'CT':       'America/Chicago',
+        'CENTRAL':  'America/Chicago',
+        'ET':       'America/New_York',
+        'EASTERN':  'America/New_York',
+        'MT':       'America/Denver',
+        'MOUNTAIN': 'America/Denver',
+        'PT':       'America/Los_Angeles',
+        'PACIFIC':  'America/Los_Angeles',
+        'AKT':      'America/Anchorage',
+        'ALASKA':   'America/Anchorage',
+        'HT':       'Pacific/Honolulu',
+        'HAWAII':   'Pacific/Honolulu',
+      };
+
+      // Fixed-offset abbreviations (no DST awareness) — kept for backward compat
+      const fixedOffsets = {
+        'EST':  -300,  'EDT':  -240,
+        'CST':  -360,  'CDT':  -300,
+        'MST':  -420,  'MDT':  -360,
+        'PST':  -480,  'PDT':  -420,
+        'AKST': -540,  'AKDT': -480,
         'HST':  -600,
       };
+
+      // Convert a date+time in an IANA timezone to a UTC Date object
+      function dateInTimezone(dateStr, timeStr, tz) {
+        const naive = new Date(dateStr + 'T' + timeStr + ':00Z');
+        const fmt = new Intl.DateTimeFormat('en-US', {
+          timeZone: tz, hour12: false,
+          year: 'numeric', month: 'numeric', day: 'numeric',
+          hour: 'numeric', minute: 'numeric', second: 'numeric'
+        });
+        const p = {};
+        for (const { type, value } of fmt.formatToParts(naive)) p[type] = value;
+        const inTZ = Date.UTC(p.year, p.month - 1, p.day, p.hour === '24' ? 0 : p.hour, p.minute, p.second);
+        return new Date(naive.getTime() - (inTZ - naive.getTime()));
+      }
 
       const lines = text.split('\n');
       const events = [];
@@ -442,23 +466,37 @@
         const title = line.substring(pipeIdx + 1).trim();
         if (!title) continue;
 
-        // Parse "YYYY-MM-DD HH:MM" or "YYYY-MM-DD HH:MM TZ"
-        const match = datePart.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})(?:\s+([A-Za-z]+))?$/);
+        // Match "YYYY-MM-DD HH:MM" with optional timezone (word or IANA path like America/Chicago)
+        const match = datePart.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})(?:\s+([A-Za-z/_]+))?$/);
         if (!match) continue;
 
-        const [, dateStr, timeStr, tzAbbr] = match;
+        const [, dateStr, timeStr, tzRaw] = match;
         let date;
 
-        if (!tzAbbr || tzAbbr.toUpperCase() === 'UTC' || tzAbbr.toUpperCase() === 'GMT') {
-          // No TZ or UTC/GMT — treat as UTC
+        if (!tzRaw || tzRaw.toUpperCase() === 'UTC' || tzRaw.toUpperCase() === 'GMT') {
           date = new Date(dateStr + 'T' + timeStr + ':00Z');
         } else {
-          const offsetMin = tzOffsets[tzAbbr.toUpperCase()];
-          if (offsetMin === undefined) continue; // unknown TZ, skip
+          const upper = tzRaw.toUpperCase();
 
-          // Build the date as if UTC, then subtract the offset to get real UTC
-          const asUtc = new Date(dateStr + 'T' + timeStr + ':00Z');
-          date = new Date(asUtc.getTime() - offsetMin * 60000);
+          // Check DST-aware aliases first
+          if (tzAliases[upper]) {
+            try {
+              date = dateInTimezone(dateStr, timeStr, tzAliases[upper]);
+            } catch { continue; }
+          }
+          // Check if it's a raw IANA name (contains a slash)
+          else if (tzRaw.includes('/')) {
+            try {
+              date = dateInTimezone(dateStr, timeStr, tzRaw);
+            } catch { continue; }
+          }
+          // Fall back to fixed-offset abbreviations
+          else if (fixedOffsets[upper] !== undefined) {
+            const asUtc = new Date(dateStr + 'T' + timeStr + ':00Z');
+            date = new Date(asUtc.getTime() - fixedOffsets[upper] * 60000);
+          } else {
+            continue; // unknown timezone, skip
+          }
         }
 
         if (isNaN(date.getTime())) continue;
