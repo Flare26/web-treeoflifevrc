@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Events — Tree of Life</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Quicksand:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/png" href="/elements/favicon.png">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+    :root {
+      --deep-violet: #0d0a1f;
+      --mid-purple: #2a1650;
+      --lavender: #c5a0f0;
+      --soft-purple: #9b6fd4;
+      --crystal-mint: #7eedc6;
+      --crystal-green: #5ae8a8;
+      --crystal-pink: #e8a0d4;
+      --glow-green: #b4ff9a;
+      --warm-lantern: #f5e8a0;
+      --card-bg: rgba(26, 16, 61, 0.6);
+      --card-border: rgba(197, 160, 240, 0.2);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Quicksand', sans-serif;
+      background: var(--deep-violet);
+      color: #ede6f7;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ——— Sunset horizon background ——— */
+    .bg-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: linear-gradient(
+        180deg,
+        #0b0824 0%,
+        #1a103d 15%,
+        #2d1560 28%,
+        #5c2d8e 40%,
+        #8e3a8a 50%,
+        #c74e6e 58%,
+        #d4684f 65%,
+        #b8753e 72%,
+        #8a6435 82%,
+        #5a4028 92%,
+        #3a2818 100%
+      );
+      animation: sunsetShift 20s ease-in-out infinite alternate;
+    }
+    @keyframes sunsetShift {
+      0%   { filter: brightness(1) saturate(1); }
+      50%  { filter: brightness(1.05) saturate(1.1); }
+      100% { filter: brightness(0.92) saturate(0.95) hue-rotate(-5deg); }
+    }
+
+    .bg-canvas::after {
+      content: '';
+      position: absolute;
+      bottom: 15%;
+      left: 0;
+      right: 0;
+      height: 30%;
+      background: radial-gradient(ellipse 120% 80% at 50% 100%, rgba(212,104,79,0.15), transparent);
+      pointer-events: none;
+    }
+
+    /* ——— Sparkle particles ——— */
+    .sparkles {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .sparkle {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0;
+      animation: twinkle ease-in-out infinite;
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: 0; transform: scale(0.5); }
+      50%      { opacity: 1; transform: scale(1); }
+    }
+
+    /* ——— Page layout ——— */
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 50px 24px 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 32px;
+    }
+
+    /* ——— Back link ——— */
+    .back-link {
+      align-self: flex-start;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      color: var(--lavender);
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      opacity: 0.6;
+      transition: opacity 0.3s, transform 0.3s;
+      animation: fadeDown 0.6s ease-out both;
+    }
+    .back-link:hover {
+      opacity: 1;
+      transform: translateX(-3px);
+    }
+    .back-link svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-15px); }
+      to   { opacity: 0.6; transform: translateY(0); }
+    }
+
+    /* ——— Page header ——— */
+    .page-header {
+      text-align: center;
+      animation: fadeIn 0.8s ease-out 0.1s both;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    .page-header h1 {
+      font-family: 'Cinzel Decorative', serif;
+      font-weight: 700;
+      font-size: 1.6rem;
+      letter-spacing: 0.04em;
+      background: linear-gradient(135deg, var(--warm-lantern), var(--lavender));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .page-header p {
+      font-size: 0.82rem;
+      color: rgba(237,230,247,0.45);
+      margin-top: 6px;
+      letter-spacing: 0.08em;
+    }
+
+    .timezone-badge {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 4px 14px;
+      border-radius: 20px;
+      background: rgba(126,237,198,0.08);
+      border: 1px solid rgba(126,237,198,0.15);
+      font-size: 0.72rem;
+      color: var(--crystal-mint);
+      letter-spacing: 0.06em;
+    }
+
+    /* ——— Divider ——— */
+    .divider {
+      width: 120px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--crystal-mint), var(--warm-lantern), var(--crystal-pink), transparent);
+      border-radius: 1px;
+      opacity: 0.5;
+    }
+
+    /* ——— Month sections ——— */
+    .calendar {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    .month-group {
+      animation: fadeUp 0.6s ease-out both;
+    }
+
+    .month-label {
+      font-family: 'Cinzel Decorative', serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--warm-lantern);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      padding-left: 4px;
+      opacity: 0.8;
+    }
+
+    .events-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* ——— Event row ——— */
+    .event-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 16px 20px;
+      border-radius: 14px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .event-row:hover {
+      border-color: rgba(197,160,240,0.3);
+      box-shadow: 0 4px 24px rgba(155,111,212,0.12);
+    }
+
+    .event-row.is-past {
+      opacity: 0.4;
+    }
+    .event-row.is-today {
+      border-color: rgba(126,237,198,0.35);
+      box-shadow: 0 0 20px rgba(126,237,198,0.08);
+    }
+
+    /* Date chip */
+    .event-date {
+      flex-shrink: 0;
+      width: 52px;
+      text-align: center;
+      padding-top: 2px;
+    }
+    .event-date .day-num {
+      font-family: 'Cinzel Decorative', serif;
+      font-weight: 700;
+      font-size: 1.4rem;
+      line-height: 1;
+      color: var(--lavender);
+    }
+    .event-date .day-name {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: rgba(197,160,240,0.5);
+      margin-top: 3px;
+    }
+
+    .event-details {
+      flex: 1;
+      min-width: 0;
+    }
+    .event-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      color: #ede6f7;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      hyphens: auto;
+    }
+    .event-time {
+      margin-top: 4px;
+      font-size: 0.78rem;
+      color: var(--crystal-mint);
+      font-weight: 500;
+      letter-spacing: 0.04em;
+    }
+
+    /* ——— Empty state ——— */
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: rgba(237,230,247,0.35);
+      font-size: 0.9rem;
+    }
+
+    /* ——— Loading ——— */
+    .loading {
+      text-align: center;
+      padding: 48px 24px;
+      color: rgba(197,160,240,0.4);
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+    }
+    .loading::after {
+      content: '';
+      display: inline-block;
+      width: 5px;
+      height: 5px;
+      margin-left: 6px;
+      border-radius: 50%;
+      background: var(--lavender);
+      animation: loadPulse 1s ease-in-out infinite;
+    }
+    @keyframes loadPulse {
+      0%, 100% { opacity: 0.2; }
+      50% { opacity: 0.8; }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ——— Footer ——— */
+    .footer {
+      margin-top: 16px;
+      text-align: center;
+      font-size: 0.72rem;
+      color: rgba(197,160,240,0.25);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 500px) {
+      .page { padding: 36px 16px 60px; gap: 24px; }
+      .page-header h1 { font-size: 1.3rem; }
+      .event-row { padding: 14px 16px; gap: 12px; }
+      .event-date { width: 44px; }
+      .event-date .day-num { font-size: 1.2rem; }
+      .event-title { font-size: 0.88rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-canvas"></div>
+  <div class="sparkles" id="sparkles"></div>
+
+  <div class="page">
+
+    <a href="../index.html" class="back-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Back to Hub
+    </a>
+
+    <div class="page-header">
+      <h1>Events Calendar</h1>
+      <p>Upcoming sets, themed nights &amp; specials</p>
+      <div class="timezone-badge" id="tz-badge"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="calendar" id="calendar">
+      <div class="loading">Loading events</div>
+    </div>
+
+    <div class="footer">
+      &copy; 2026 Tree of Life &mdash; See you on the dance floor
+    </div>
+
+  </div>
+
+  <script>
+    // ——— Sparkles (same as hub) ———
+    (() => {
+      const container = document.getElementById('sparkles');
+      const colors = ['#c5a0f0','#7eedc6','#f5a04a','#fcd97e','#e87454','#ffffff'];
+      for (let i = 0; i < 40; i++) {
+        const s = document.createElement('div');
+        s.className = 'sparkle';
+        const size = Math.random() * 3 + 1.5;
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        s.style.cssText = `
+          width:${size}px;height:${size}px;
+          background:${color};
+          left:${Math.random()*100}%;
+          top:${Math.random()*100}%;
+          animation-duration:${Math.random()*4+2}s;
+          animation-delay:${Math.random()*6}s;
+          box-shadow: 0 0 ${size*3}px ${color};
+        `;
+        container.appendChild(s);
+      }
+    })();
+
+    // ——— Timezone badge ———
+    const tzName = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    document.getElementById('tz-badge').textContent = 'Times shown in ' + tzName.replace(/_/g, ' ');
+
+    // ——— Fetch & render events ———
+    const calendarEl = document.getElementById('calendar');
+
+    fetch('../events.txt')
+      .then(res => {
+        if (!res.ok) throw new Error('Could not load events.txt');
+        return res.text();
+      })
+      .then(text => {
+        const events = parseEvents(text);
+        renderCalendar(events);
+      })
+      .catch(() => {
+        calendarEl.innerHTML = '<div class="empty-state">Unable to load events. Check back soon!</div>';
+      });
+
+    function parseEvents(text) {
+      const lines = text.split('\n');
+      const events = [];
+
+      for (const raw of lines) {
+        const line = raw.trim();
+        if (!line || line.startsWith('#')) continue;
+
+        const pipeIdx = line.indexOf('|');
+        if (pipeIdx === -1) continue;
+
+        const datePart = line.substring(0, pipeIdx).trim();
+        const title = line.substring(pipeIdx + 1).trim();
+        if (!title) continue;
+
+        // Parse "YYYY-MM-DD HH:MM" as UTC
+        const match = datePart.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})$/);
+        if (!match) continue;
+
+        const utcDate = new Date(match[1] + 'T' + match[2] + ':00Z');
+        if (isNaN(utcDate.getTime())) continue;
+
+        events.push({ date: utcDate, title });
+      }
+
+      // Sort chronologically
+      events.sort((a, b) => a.date - b.date);
+      return events;
+    }
+
+    function renderCalendar(events) {
+      if (events.length === 0) {
+        calendarEl.innerHTML = '<div class="empty-state">No upcoming events yet — stay tuned!</div>';
+        return;
+      }
+
+      const now = new Date();
+      const todayStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD local
+
+      // Group by month (in local time)
+      const months = new Map();
+      for (const ev of events) {
+        const key = ev.date.toLocaleString('en-US', { year: 'numeric', month: 'long' });
+        if (!months.has(key)) months.set(key, []);
+        months.get(key).push(ev);
+      }
+
+      let html = '';
+      let groupIdx = 0;
+
+      for (const [monthLabel, monthEvents] of months) {
+        html += `<div class="month-group" style="animation-delay:${0.15 * groupIdx}s">`;
+        html += `<div class="month-label">${monthLabel}</div>`;
+        html += '<div class="events-list">';
+
+        for (const ev of monthEvents) {
+          const localDate = ev.date.toLocaleDateString('en-CA'); // YYYY-MM-DD
+          const isPast = ev.date < now;
+          const isToday = localDate === todayStr;
+
+          const dayNum = ev.date.toLocaleString('en-US', { day: 'numeric' });
+          const dayName = ev.date.toLocaleString('en-US', { weekday: 'short' });
+          const timeStr = ev.date.toLocaleString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          });
+
+          let cls = 'event-row';
+          if (isPast) cls += ' is-past';
+          else if (isToday) cls += ' is-today';
+
+          html += `
+            <div class="${cls}">
+              <div class="event-date">
+                <div class="day-num">${dayNum}</div>
+                <div class="day-name">${dayName}</div>
+              </div>
+              <div class="event-details">
+                <div class="event-title">${escapeHtml(ev.title)}</div>
+                <div class="event-time">${timeStr}</div>
+              </div>
+            </div>`;
+        }
+
+        html += '</div></div>';
+        groupIdx++;
+      }
+
+      calendarEl.innerHTML = html;
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+  </script>
+
+</body>
+</html>
